@@ -7,6 +7,7 @@ import (
 	"time"
 
 	pb "filesharep2p/fileshare"
+	sum "filesharep2p/sum"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -33,11 +34,16 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.HasFile(ctx, &pb.MessageRequest{Hash: *hash})
-	if err != nil {
-		log.Fatalf("could not search: %v", err)
-	}
-	if r.HasFile {
-		log.Printf("founded!")
+	s := make(chan sum.Sums)
+	nt := sum.ReadFiles(s)
+	for i := 0; i < nt; i++ {
+		x := <-s
+		r, err := c.HasFile(ctx, &pb.MessageRequest{Hash: int64(x.Sum)})
+		if err != nil {
+			log.Fatalf("could not search: %v", err)
+		}
+		if r.HasFile {
+			log.Printf("founded %s", x.Path)
+		}
 	}
 }

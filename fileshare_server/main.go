@@ -8,6 +8,7 @@ import (
 	"net"
 
 	pb "filesharep2p/fileshare"
+	sum "filesharep2p/sum"
 
 	"google.golang.org/grpc"
 )
@@ -22,7 +23,15 @@ type server struct {
 
 func (s *server) HasFile(ctx context.Context, in *pb.MessageRequest) (*pb.MessageResponse, error) {
 	log.Printf("Received: %v", in.GetHash())
-	return &pb.MessageResponse{HasFile: true}, nil
+	c := make(chan sum.Sums)
+	nt := sum.ReadFiles(c)
+	for i := 0; i < nt; i++ {
+		x := <-c
+		if x.Sum == int(in.GetHash()) {
+			return &pb.MessageResponse{HasFile: true}, nil
+		}
+	}
+	return &pb.MessageResponse{HasFile: false}, nil
 }
 
 func main() {

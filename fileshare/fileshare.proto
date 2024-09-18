@@ -23,7 +23,7 @@ service FileshareService {
 }
 
 message MessageRequest {
-  string hash = 1;
+  int64 hash = 1;
 }
 
 message MessageResponse {
