@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 // readFile lê um arquivo a partir do caminho e retorna um slice de bytes
@@ -45,8 +46,10 @@ func ReadFiles(s chan Sums) int {
 	}
 	nt := 0
 	for _, path := range os.Args[1:] {
-		go Sum(path, s) // Usando a função Sum do pacote sumPkg
-		nt += 1
+		if !strings.HasPrefix(path, "--") {
+			go Sum(path, s)
+			nt += 1
+		}
 	}
 	return nt
 }

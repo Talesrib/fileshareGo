@@ -88,12 +88,13 @@ func register() {
 	if err != nil {
 		log.Fatalf("Erro ao registrar o peer: %v", err)
 	}
-	fmt.Print(registerResp.Message)
+	fmt.Println(registerResp.Message)
 }
 
 func main() {
 	flag.Parse()
 	go calculateSum()
 	go register()
-	initiateServer()
+	go initiateServer()
+	select {}
 }
