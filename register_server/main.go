@@ -6,22 +6,16 @@ import (
 	"log"
 	"net"
 	"sync"
-	"time"
 
 	pb "filesharep2p/register"
 
 	"google.golang.org/grpc"
 )
 
-type peerInfo struct {
-	Address   string
-	Timestamp time.Time
-}
-
 type bootstrapServer struct {
 	pb.UnimplementedRegisterServiceServer
 	mu    sync.Mutex
-	peers map[string]peerInfo
+	peers []string
 }
 
 func (s *bootstrapServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
@@ -37,10 +31,7 @@ func (s *bootstrapServer) Register(ctx context.Context, req *pb.RegisterRequest)
 	}
 
 	// Registra o peer
-	s.peers[peerAddress] = peerInfo{
-		Address:   peerAddress,
-		Timestamp: time.Now(),
-	}
+	s.peers = append(s.peers, peerAddress)
 
 	fmt.Printf("Peer %s registrado com sucesso\n", peerAddress)
 
@@ -55,8 +46,10 @@ func (s *bootstrapServer) GetPeers(ctx context.Context, req *pb.ListOfPeersReque
 	defer s.mu.Unlock()
 
 	peers := []string{}
-	for addr := range s.peers {
-		peers = append(peers, addr)
+	for _, addr := range s.peers {
+		if req.Address != addr {
+			peers = append(peers, addr)
+		}
 	}
 
 	return &pb.ListOfPeersResponse{
@@ -66,7 +59,7 @@ func (s *bootstrapServer) GetPeers(ctx context.Context, req *pb.ListOfPeersReque
 
 func main() {
 	server := &bootstrapServer{
-		peers: make(map[string]peerInfo),
+		peers: make([]string, 0),
 	}
 
 	lis, err := net.Listen("tcp", ":50051")
